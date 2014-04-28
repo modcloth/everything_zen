@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -25,6 +26,7 @@ func AddOrUpdateTasks(tasks <-chan TrackerTask, token, projectID string) {
 	LogAndQuit(err)
 
 	for task := range tasks {
+		fmt.Printf("assigning agile task %s to pivotal story %d\n", task.AgileURL, task.StoryID)
 		tracker.SaveTask(task.StoryID, task.AgileURL, task.IsComplete)
 	}
 }
