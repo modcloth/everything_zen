@@ -18,6 +18,14 @@ type AgileZen struct {
 	apiToken, url, projectID string
 }
 
+type Page struct {
+	Page       int     `json:"page"`
+	PageSize   int     `json:"pageSize"`
+	TotalPages int     `json:"totalPages"`
+	TotalItems int     `json:"totalItems"`
+	Items      []Story `json:"items"`
+}
+
 type Story struct {
 	ID       int     `json"id"`
 	Text     string  `json"text"`
@@ -62,14 +70,23 @@ func NewAgileZen(token, projectID string) (*AgileZen, error) {
 	url := fmt.Sprintf("%s/%s", BaseURL, projectID)
 	return &AgileZen{token, url, projectID}, nil
 }
-
 func (az *AgileZen) Stories() ([]Story, error) {
-	var page = struct {
-		Items []Story `json:"items"`
-	}{}
-	err := az.doGet(az.url+"/stories?with=tags", &page)
+	items := make([]Story, 0)
+	currentPage := 1
 
-	return page.Items, err
+	for {
+		page := Page{}
+		url := fmt.Sprintf("%s/stories?page=%d&with=tags", az.url, currentPage)
+		if err := az.doGet(url, &page); err != nil {
+			return nil, err
+		}
+		items = append(items, page.Items...)
+		if currentPage == page.TotalPages {
+			break
+		}
+		currentPage += 1
+	}
+	return items, nil
 }
 
 func (s *Story) UrlForStory() string {
